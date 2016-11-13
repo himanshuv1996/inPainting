@@ -64,17 +64,17 @@ public:
     	    return 3;//ERROR_HALF_PATCH_WIDTH_ZERO;
     	return 4;//CHECK_VALID;
     }
+    //edge detection using sobel derivative
     void calculateGradients()
     {
     	Mat srcGray;
     	//convert image from one color space to other
 	    cvtColor(workImage,srcGray,CV_BGR2GRAY);
-	    //Sobel Derivatives
+	    //Sobel Derivatives for x 
 	    Scharr(srcGray,gradientX,CV_16S,1,0);
+	    //scale and convert to 8 bits
 	    convertScaleAbs(gradientX,gradientX);
 	    gradientX.convertTo(gradientX,CV_32F);
-
-
 	    Scharr(srcGray,gradientY,CV_16S,0,1);
 	    convertScaleAbs(gradientY,gradientY);
 	    gradientY.convertTo(gradientY,CV_32F);
@@ -90,7 +90,31 @@ public:
 	    gradientX/=255;
 	    gradientY/=255;
     }
-    void initializeMats();
+    void initializeMats()
+    {
+    	//threshold mask image into confidence image
+    	threshold(this->mask,this->confidence,10,255,CV_THRESH_BINARY);
+    	//thresholding operations
+	    threshold(confidence,confidence,2,1,CV_THRESH_BINARY_INV);
+	    confidence.convertTo(confidence,CV_32F);
+	    
+	    this->sourceRegion=confidence.clone();
+	    this->sourceRegion.convertTo(sourceRegion,CV_8U);
+	    this->originalSourceRegion=sourceRegion.clone();
+
+	    threshold(mask,this->targetRegion,10,255,CV_THRESH_BINARY);
+	    threshold(targetRegion,targetRegion,2,1,CV_THRESH_BINARY);
+	    targetRegion.convertTo(targetRegion,CV_8U);
+	    data=Mat(inputImage.rows,inputImage.cols,CV_32F,Scalar::all(0));
+
+
+	    LAPLACIAN_KERNEL=Mat::ones(3,3,CV_32F);
+	    LAPLACIAN_KERNEL.at<float>(1,1)=-8;
+	    NORMAL_KERNELX=Mat::zeros(3,3,CV_32F);
+	    NORMAL_KERNELX.at<float>(1,0)=-1;
+	    NORMAL_KERNELX.at<float>(1,2)=1;
+	    transpose(NORMAL_KERNELX,NORMAL_KERNELY);
+    }
     void computeFillFront();
     void computeConfidence(){
         Point2i a,b;    // Integer points
@@ -115,8 +139,8 @@ public:
     void computeTarget();
     void computeBestPatch();
     void updateMats(){
-    	cv::Point2i targetPoint=fillFront.at(targetIndex);
-    	cv::Point2i a,b;
+    	Point2i targetPoint=fillFront.at(targetIndex);
+    	Point2i a,b;
     	getPatch(targetPoint,a,b);
     	int width=b.x-a.x+1;
     	int height=b.y-a.y+1;
@@ -124,7 +148,7 @@ public:
     	for(int x=0;x<width;x++){
     		for(int y=0;y<height;y++){
     			if(sourceRegion.at<uchar>(a.y+y,a.x+x)==0){
-					workImage.at<cv::Vec3b>(a.y+y,a.x+x)=workImage.at<cv::Vec3b>(bestMatchUpperLeft.y+y,bestMatchUpperLeft.x+x);
+					workImage.at<Vec3b>(a.y+y,a.x+x)=workImage.at<Vec3b>(bestMatchUpperLeft.y+y,bestMatchUpperLeft.x+x);
 					gradientX.at<float>(a.y+y,a.x+x)=gradientX.at<float>(bestMatchUpperLeft.y+y,bestMatchUpperLeft.x+x);
 					gradientY.at<float>(a.y+y,a.x+x)=gradientY.at<float>(bestMatchUpperLeft.y+y,bestMatchUpperLeft.x+x);
 					confidence.at<float>(a.y+y,a.x+x)=confidence.at<float>(targetPoint.y,targetPoint.x);
