@@ -93,10 +93,14 @@ public:
     void initializeMats();
     void computeFillFront();
     void computeConfidence();
-    void computeData();
+    void computeData(){
+    	//qwe
+    }
 
     void computeTarget();
     void computeBestPatch();
+
+    //It updates the workImage and gradient Images with the values as present in the patch
     void updateMats(){
     	cv::Point2i targetPoint=fillFront.at(targetIndex);
     	cv::Point2i a,b;
