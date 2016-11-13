@@ -42,12 +42,30 @@ public:
     int halfPatchWidth;
     int targetIndex;
 
-    int checkValidInputs();
-    void calculateGradients();
-    void initializeMats();
-    void computeFillFront();
-    void computeConfidence();
-    void computeData();
+    int checkValidInputs(){
+    	//qwe
+    };
+
+    void calculateGradients(){
+
+    };
+
+    void initializeMats(){
+    	//qwe
+    };
+
+    void computeFillFront(){
+    	//qwe
+    };
+
+    void computeConfidence(){
+    	//qwe
+    };
+
+    void computeData(){
+    	//qwe
+    };
+    
     void computeTarget();
     void computeBestPatch();
     void updateMats();
