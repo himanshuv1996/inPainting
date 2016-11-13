@@ -362,24 +362,22 @@ public:
     }
 };
 
-static void onMouse(int event, int x, int y, int flags, void*){
-    if(event == EVENT_LBUTTONUP || flags != EVENT_FLAG_LBUTTON){
-        prevPt = Point(-1,-1);
-    }
-    else if (event == EVENT_LBUTTONDOWN)
-        prevPt = Point(x,y);
-
-    else if(event == EVENT_MOUSEMOVE && flags == EVENT_FLAG_LBUTTON){
-        Point pt(x,y);
-        if(prevPt.x < 0)
+static void onMouse( int event, int x, int y, int flags, void* )
+{
+    if(event == cv::EVENT_LBUTTONUP||!(flags & cv::EVENT_FLAG_LBUTTON) )
+        prevPt = cv::Point(-1,-1);
+    else if( event == cv::EVENT_LBUTTONDOWN )
+        prevPt = cv::Point(x,y);
+    else if( event == cv::EVENT_MOUSEMOVE && (flags & cv::EVENT_FLAG_LBUTTON) )
+    {
+        cv::Point pt(x,y);
+        if( prevPt.x < 0 )
             prevPt = pt;
-
-        line(inpaintMask, prevPt, pt, Scalar::all(255), thickness,8,0);
-        line(image, prevPt, pt, Scalar::all(255), thickness,8,0);
+        cv::line( inpaintMask, prevPt, pt, cv::Scalar::all(255), thickness, 8, 0 );
+        cv::line( image, prevPt, pt, cv::Scalar::all(255), thickness, 8, 0 );
         prevPt = pt;
-        imshow("Input Image", image);
+        cv::imshow("image", image);
     }
-
 }
 
 int main(int argc, char *argv[]){
@@ -408,7 +406,7 @@ int main(int argc, char *argv[]){
 
     namedWindow("Input Image", WINDOW_AUTOSIZE);
     imshow("Input Image", image);
-    setMouseCallback("image", onMouse, NULL);
+    setMouseCallback("image", onMouse, 0);
 
     while(1){
         char c = waitKey();
