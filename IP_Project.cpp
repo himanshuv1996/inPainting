@@ -118,6 +118,7 @@ public:
     }
 
     void computeFillFront(){
+    	printf("ENTERING FUNCTION computeFillFront\n");
         Mat sourceGradientX,sourceGradientY,boundryMat;
         // filter2D --> Convolves an image with the kernel. 
         // TargetRegion -> i/p image
@@ -153,6 +154,7 @@ public:
         }
     }
     void computeConfidence(){
+    	printf("ENTERING FUNCTION computeConfidence\n");
         Point2i a,b;    // Integer points
 
         // fillfront (vector) 
@@ -173,7 +175,7 @@ public:
     }
 
     void computeData(){
-    	
+    	printf("ENTERING FUNCTION computeData\n");
     	for(int i=0;i<fillFront.size();i++){
 	        cv::Point2i currentPoint=fillFront.at(i);
 	        cv::Point2i currentNormal=normals.at(i);
@@ -182,6 +184,7 @@ public:
     }
 
     void computeBestPatch(){
+        printf("ENTERING FUNCTION computeBestPatch\n");
 	    double minError=9999999999999999,bestPatchVarience=9999999999999999;
 	    cv::Point2i a,b;
 	    cv::Point2i currentPoint=fillFront.at(targetIndex);
@@ -275,6 +278,7 @@ public:
 
     //It updates the workImage and gradient Images with the values as present in the patch
     void updateMats(){
+        printf("ENTERING FUNCTION updateMats\n");
     	Point2i targetPoint=fillFront.at(targetIndex);
     	Point2i a,b;
     	getPatch(targetPoint,a,b);
@@ -297,6 +301,7 @@ public:
     }
 
     bool checkEnd(){
+        printf("ENTERING FUNCTION checkEnd\n");
     	for(int x=0;x<sourceRegion.cols;x++){
     		for(int y=0;y<sourceRegion.rows;y++){
     			if(sourceRegion.at<uchar>(y,x)==0){
@@ -308,13 +313,21 @@ public:
     }
 
     void getPatch(Point2i &centerPixel, Point2i &upperLeft, Point2i &lowerRight){
-    	int x,y;
-    	x=centerPixel.x;
-    	y=centerPixel.y;
+	    int x,y;
+	    x=centerPixel.x;
+	    y=centerPixel.y;
 
-    	int minX=max(x-halfPatchWidth,0);
-    	int maxX=min(x+halfPatchWidth,workImage.cols-1);
-    	int minY=max(y-halfPatchWidth,0);
+	    int minX=std::max(x-halfPatchWidth,0);
+	    int maxX=std::min(x+halfPatchWidth,workImage.cols-1);
+	    int minY=std::max(y-halfPatchWidth,0);
+	    int maxY=std::min(y+halfPatchWidth,workImage.rows-1);
+
+
+	    upperLeft.x=minX;
+	    upperLeft.y=minY;
+
+	    lowerRight.x=maxX;
+	    lowerRight.y=maxY;
     }
     
     void inpaint(){
@@ -347,6 +360,7 @@ public:
     }
 
     void computeTarget(){
+        printf("ENTERING FUNCTION computeTarget\n");
     	targetIndex = 0;
     	float maxPrior = 0;
     	float prior = 0;
@@ -380,67 +394,112 @@ static void onMouse( int event, int x, int y, int flags, void* )
     }
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
 
-    // First argument is Image path
-    // Second argument is halfPatchWidth
+    //we expect three arguments.
+    //the first is the image path.
+    //the second is the mask path.
+    //the third argument is the halfPatchWidth
 
-    int halfPatchWidth = 4;
+    //in case halPatchWidth is not specified we use a default value of 3.
+    //in case only image path is speciifed, we use manual marking of mask over the image.
+    //in case image name is also not specified , we use default image default.jpg.
 
-    if(argc >= 4){
+
+    int halfPatchWidth=4;
+
+    if(argc>=4)
+    {
         std::stringstream ss;
         ss<<argv[3];
         ss>>halfPatchWidth;
     }
 
-    originalImage = imread(argv[1],CV_LOAD_IMAGE_COLOR);
+    char* imageName = argc >= 2 ? argv[1] : (char*)"default.jpg";
+
+    originalImage=cv::imread(imageName,CV_LOAD_IMAGE_COLOR);
 
     if(!originalImage.data){
-        cout<<"Unable to open input image"<<endl;
+        std::cout<<std::endl<<"Error unable to open input image"<<std::endl;
         return 0;
     }
 
-    image = originalImage.clone();
+    image=originalImage.clone();
 
-    inpaintMask = Mat::zeros(image.size(), CV_8U);
 
-    namedWindow("Input Image", WINDOW_AUTOSIZE);
-    imshow("Input Image", image);
-    setMouseCallback("image", onMouse, 0);
 
-    while(1){
-        char c = waitKey();
-
-        if(c == 'e')
-            break;
-
-        if(c == 'i'){
-            Inpainter i(originalImage, inpaintMask, halfPatchWidth);
-            if(i.checkValidInputs() == i.CHECK_VALID){
-                i.inpaint();
-                imwrite("Result.jpg", i.result);
-                inpaintMask = Scalar::all(0);
-                namedWindow("Result");
-                imshow("Result",i.result);
-            }
-            else{
-                cout<<"Invalid Parameters"<<endl;
-            }
-        }
-
-        if(c == 's'){
-            thickness++;
-            cout<<"Thickness =  "<<thickness<<endl;
-        }
-
-        if(c == 'a'){
-            thickness--;
-            cout<<"Thickness = "<<thickness<<endl;
-        }
-
-        if(thickness<3)
-            thickness = 3;
-        if(thickness > 12)
-            thickness = 12;
+    bool maskSpecified=false;
+    char* maskName;
+    if(argc >= 3){
+       maskName=argv[2];
+       maskSpecified=true;
     }
-return 0;}
+
+    if(maskSpecified){
+        inpaintMask=cv::imread(maskName,CV_LOAD_IMAGE_GRAYSCALE);
+        Inpainter i(originalImage,inpaintMask,halfPatchWidth);
+        if(i.checkValidInputs()==i.CHECK_VALID){
+            i.inpaint();
+            cv::imwrite("result.jpg",i.result);
+            cv::namedWindow("result");
+            cv::imshow("result",i.result);
+            cv::waitKey();
+        }else{
+            std::cout<<std::endl<<"Error : invalid parameters"<<std::endl;
+        }
+    }
+    else
+    {
+        std::cout<<std::endl<<"mask not specified , mark manually on input image"<<std::endl;
+        inpaintMask = cv::Mat::zeros(image.size(), CV_8U);
+        cv::namedWindow( "image", 1 );
+        cv::imshow("image", image);
+        cv::setMouseCallback( "image", onMouse, 0 );
+
+        for(;;)
+            {
+                char c = (char)cv::waitKey();
+
+                if( c == 'e' )
+                    break;
+
+                if( c == 'r' )
+                {
+                    inpaintMask = cv::Scalar::all(0);
+                    image=originalImage.clone();
+                    cv::imshow("image", image);
+                }
+
+                if( c == 'i' || c == ' ' )
+                {
+                    Inpainter i(originalImage,inpaintMask,halfPatchWidth);
+                    if(i.checkValidInputs()==i.CHECK_VALID){
+                        i.inpaint();
+                        cv::imwrite("result.jpg",i.result);
+                        inpaintMask = cv::Scalar::all(0);
+                        cv::namedWindow("result");
+                        cv::imshow("result",i.result);
+                    }else{
+                        std::cout<<std::endl<<"Error : invalid parameters"<<std::endl;
+                    }
+
+
+                }
+                if(c=='s'){
+                    thickness++;
+                    std::cout<<std::endl<<"Thickness = "<<thickness;
+                }
+                if(c=='a'){
+                    thickness--;
+                    std::cout<<std::endl<<"Thickness = "<<thickness;
+                }
+                if(thickness<3)
+                    thickness=3;
+                if(thickness>12)
+                    thickness=12;
+            }
+
+    }
+    return 0;
+}
