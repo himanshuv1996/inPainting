@@ -78,11 +78,6 @@ public:
 	    convertScaleAbs(gradientY,gradientY);
 	    gradientY.convertTo(gradientY,CV_32F);
 
-
-
-
-
-
 	    for(int x=0;x<sourceRegion.cols;x++){
 	        for(int y=0;y<sourceRegion.rows;y++){
 
@@ -109,9 +104,48 @@ public:
 
     void computeTarget();
     void computeBestPatch();
-    void updateMats();
-    bool checkEnd();
-    void getPatch(Point2i &centerPixel, Point2i &upperLeft, Point2i &lowerRight);
+    void updateMats(){
+    	cv::Point2i targetPoint=fillFront.at(targetIndex);
+    	cv::Point2i a,b;
+    	getPatch(targetPoint,a,b);
+    	int width=b.x-a.x+1;
+    	int height=b.y-a.y+1;
+
+    	for(int x=0;x<width;x++){
+    		for(int y=0;y<height;y++){
+    			if(sourceRegion.at<uchar>(a.y+y,a.x+x)==0){
+					workImage.at<cv::Vec3b>(a.y+y,a.x+x)=workImage.at<cv::Vec3b>(bestMatchUpperLeft.y+y,bestMatchUpperLeft.x+x);
+					gradientX.at<float>(a.y+y,a.x+x)=gradientX.at<float>(bestMatchUpperLeft.y+y,bestMatchUpperLeft.x+x);
+					gradientY.at<float>(a.y+y,a.x+x)=gradientY.at<float>(bestMatchUpperLeft.y+y,bestMatchUpperLeft.x+x);
+					confidence.at<float>(a.y+y,a.x+x)=confidence.at<float>(targetPoint.y,targetPoint.x);
+					sourceRegion.at<uchar>(a.y+y,a.x+x)=1;
+					targetRegion.at<uchar>(a.y+y,a.x+x)=0;
+					updatedMask.at<uchar>(a.y+y,a.x+x)=0;
+				}
+    		}
+    	}
+    }
+
+    bool checkEnd(){
+    	for(int x=0;x<sourceRegion.cols;x++){
+    		for(int y=0;y<sourceRegion.rows;y++){
+    			if(sourceRegion.at<uchar>(y,x)==0){
+    				return true;
+    			}
+    		}
+    	}
+    	return false;
+    }
+
+    void getPatch(Point2i &centerPixel, Point2i &upperLeft, Point2i &lowerRight){
+    	int x,y;
+    	x=centerPixel.x;
+    	y=centerPixel.y;
+
+    	int minX=max(x-halfPatchWidth,0);
+    	int maxX=min(x+halfPatchWidth,workImage.cols-1);
+    	int minY=max(y-halfPatchWidth,0);
+    }
     
     void inpaint(){
     	namedWindow("updatedMask");
