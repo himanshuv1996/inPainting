@@ -138,6 +138,8 @@ public:
 
     void computeTarget();
     void computeBestPatch();
+
+    //It updates the workImage and gradient Images with the values as present in the patch
     void updateMats(){
     	Point2i targetPoint=fillFront.at(targetIndex);
     	Point2i a,b;
@@ -208,6 +210,21 @@ public:
 
     	namedWindow("confidence");
     	imshow("confidence",confidence);
+    }
+
+    void computeTarget(){
+    	targetIndex = 0;
+    	float maxPrior = 0;
+    	float prior = 0;
+    	Point2i currentPoint;
+    	for(int i=0;i<fillFront.size();i++){
+    		currentPoint = fillFront[i];
+    		prior = data.at<float>(currentPoint.y,currentPoint.x)*confidence.at<float>(currentPoint.y,currentPoint.x);
+    		if(prior>maxPrior){
+    			maxPrior = prior;
+    			targetIndex = i;
+    		}
+    	}
     }
 };
 
