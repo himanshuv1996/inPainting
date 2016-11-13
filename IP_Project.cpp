@@ -67,8 +67,9 @@ public:
     void calculateGradients()
     {
     	Mat srcGray;
+    	//convert image from one color space to other
 	    cvtColor(workImage,srcGray,CV_BGR2GRAY);
-
+	    //Sobel Derivatives
 	    Scharr(srcGray,gradientX,CV_16S,1,0);
 	    convertScaleAbs(gradientX,gradientX);
 	    gradientX.convertTo(gradientX,CV_32F);
@@ -77,26 +78,13 @@ public:
 	    Scharr(srcGray,gradientY,CV_16S,0,1);
 	    convertScaleAbs(gradientY,gradientY);
 	    gradientY.convertTo(gradientY,CV_32F);
-
-
-
-
-
-
 	    for(int x=0;x<sourceRegion.cols;x++){
 	        for(int y=0;y<sourceRegion.rows;y++){
 
 	            if(sourceRegion.at<uchar>(y,x)==0){
 	                gradientX.at<float>(y,x)=0;
 	                gradientY.at<float>(y,x)=0;
-	            }/*else
-	            {
-	                if(gradientX.at<float>(y,x)<255)
-	                    gradientX.at<float>(y,x)=0;
-	                if(gradientY.at<float>(y,x)<255)
-	                    gradientY.at<float>(y,x)=0;
-	            }*/
-
+	            }
 	        }
 	    }
 	    gradientX/=255;
