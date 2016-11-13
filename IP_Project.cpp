@@ -104,7 +104,24 @@ public:
     }
     void initializeMats();
     void computeFillFront();
-    void computeConfidence();
+    void computeConfidence(){
+        Point2i a,b;    // Integer points
+
+        for(int i=0;i<fillFront.size();i++){
+            Point2i currentPoint = fillFront.at(i);
+            getPatch(currentPoint, a, b);
+            float total = 0;
+
+            for(int x1 = a.x; x1<=b.x; x1++){
+                for(int y1 = a.y; y1<=b.y; y1++){
+                    if(targetRegion.at<uchar>(y1,x1) == 0){
+                        total+=confidence.at<float>(y1,x1);
+                    }
+                }
+            }
+            confidence.at<float>(currentPoint.y, currentPoint.x) = total/((b.x-a.x+1)*(b.y-a.y+1));
+        }
+    }
     void computeData();
 
     void computeTarget();
