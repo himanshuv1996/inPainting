@@ -111,9 +111,97 @@ public:
         }
     }
     void computeData();
+    void computeBestPatch(){
+    double minError=9999999999999999,bestPatchVarience=9999999999999999;
+    cv::Point2i a,b;
+    cv::Point2i currentPoint=fillFront.at(targetIndex);
+    cv::Vec3b sourcePixel,targetPixel;
+    double meanR,meanG,meanB;
+    double difference,patchError;
+    bool skipPatch;
+    getPatch(currentPoint,a,b);
 
-    void computeTarget();
-    void computeBestPatch();
+    int width=b.x-a.x+1;
+    int height=b.y-a.y+1;
+    for(int x=0;x<=workImage.cols-width;x++){
+        for(int y=0;y<=workImage.rows-height;y++){
+            patchError=0;
+            meanR=0;meanG=0;meanB=0;
+            skipPatch=false;
+
+            for(int x2=0;x2<width;x2++){
+                for(int y2=0;y2<height;y2++){
+                    if(originalSourceRegion.at<uchar>(y+y2,x+x2)==0){
+                        skipPatch=true;
+                        break;
+                     }
+
+                    if(sourceRegion.at<uchar>(a.y+y2,a.x+x2)==0)
+                        continue;
+
+                    sourcePixel=workImage.at<cv::Vec3b>(y+y2,x+x2);
+                    targetPixel=workImage.at<cv::Vec3b>(a.y+y2,a.x+x2);
+
+                    for(int i=0;i<3;i++){
+                        difference=sourcePixel[i]-targetPixel[i];
+                        patchError+=difference*difference;
+                    }
+                    meanB+=sourcePixel[0];meanG+=sourcePixel[1];meanR+=sourcePixel[2];
+                }
+                if(skipPatch)
+                    break;
+            }
+
+            if(skipPatch)
+                continue;
+            if(patchError<minError){
+                minError=patchError;
+                bestMatchUpperLeft=cv::Point2i(x,y);
+                bestMatchLowerRight=cv::Point2i(x+width-1,y+height-1);
+
+                double patchVarience=0;
+                for(int x2=0;x2<width;x2++){
+                    for(int y2=0;y2<height;y2++){
+                        if(sourceRegion.at<uchar>(a.y+y2,a.x+x2)==0){
+                            sourcePixel=workImage.at<cv::Vec3b>(y+y2,x+x2);
+                            difference=sourcePixel[0]-meanB;
+                            patchVarience+=difference*difference;
+                            difference=sourcePixel[1]-meanG;
+                            patchVarience+=difference*difference;
+                            difference=sourcePixel[2]-meanR;
+                            patchVarience+=difference*difference;
+                        }
+
+                    }
+                }
+                bestPatchVarience=patchVarience;
+
+            }else if(patchError==minError){
+                double patchVarience=0;
+                for(int x2=0;x2<width;x2++){
+                    for(int y2=0;y2<height;y2++){
+                        if(sourceRegion.at<uchar>(a.y+y2,a.x+x2)==0){
+                            sourcePixel=workImage.at<cv::Vec3b>(y+y2,x+x2);
+                            difference=sourcePixel[0]-meanB;
+                            patchVarience+=difference*difference;
+                            difference=sourcePixel[1]-meanG;
+                            patchVarience+=difference*difference;
+                            difference=sourcePixel[2]-meanR;
+                            patchVarience+=difference*difference;
+                        }
+
+                    }
+                }
+                if(patchVarience<bestPatchVarience){
+                    minError=patchError;
+                    bestMatchUpperLeft=cv::Point2i(x,y);
+                    bestMatchLowerRight=cv::Point2i(x+width-1,y+height-1);
+                    bestPatchVarience=patchVarience;
+                }
+            }
+        }
+    }
+}
 
     //It updates the workImage and gradient Images with the values as present in the patch
     void updateMats(){
