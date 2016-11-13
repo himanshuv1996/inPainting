@@ -91,13 +91,51 @@ public:
 	    gradientY/=255;
     }
     void initializeMats();
-    void computeFillFront();
+
+    void computeFillFront(){
+
+        Mat sourceGradientX,sourceGradientY,boundryMat;
+        // filter2D --> Convolves an image with the kernel. 
+        // TargetRegion -> i/p image
+        // Laplacian Kernel -> i/p kernel
+        // boundryMat --> o/p image
+        filter2D(targetRegion,boundryMat,CV_32F,LAPLACIAN_KERNEL);
+        filter2D(sourceRegion,sourceGradientX,CV_32F,NORMAL_KERNELX);
+        filter2D(sourceRegion,sourceGradientY,CV_32F,NORMAL_KERNELY);
+
+        fillFront.clear();
+        normals.clear();
+
+        for(int x=0; x < boundryMat.cols;x++){
+            for(int y=0;y<boundryMat.rows;y++){
+
+                if(boundryMat.at<float>(y,x)>0){
+                    fillFront.push_back(Point2i(x,y));
+
+                    float dx=sourceGradientX.at<float>(y,x);
+                    float dy=sourceGradientY.at<float>(y,x);
+                    Point2f normal(dy,-dx);
+                    float tempF=sqrt((normal.x*normal.x)+(normal.y*normal.y));
+                    if(tempF!=0){
+
+                    normal.x=normal.x/tempF;
+                    normal.y=normal.y/tempF;
+
+                    }
+                    normals.push_back(normal);
+
+                }
+            }
+        }
+    }
+
     void computeConfidence(){
         Point2i a,b;    // Integer points
 
+        // fillfront (vector) 
         for(int i=0;i<fillFront.size();i++){
             Point2i currentPoint = fillFront.at(i);
-            getPatch(currentPoint, a, b);
+            getPatch(currentPoint, a, b);   // 
             float total = 0;
 
             for(int x1 = a.x; x1<=b.x; x1++){
