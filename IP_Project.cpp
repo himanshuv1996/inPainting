@@ -21,7 +21,16 @@ public:
     const static int ERROR_HALF_PATCH_WIDTH_ZERO=3;
     const static int CHECK_VALID=4;
 
-    Inpainter(Mat inputImage,Mat mask,int halfPatchWidth=4,int mode=1);
+    Inpainter(Mat inputImage,Mat mask,int halfPatchWidth=4,int mode=1)
+    {
+    	this->inputImage=inputImage.clone();
+		this->mask=mask.clone();
+		this->updatedMask=mask.clone();
+		this->workImage=inputImage.clone();
+		this->result.create(inputImage.size(),inputImage.type());
+		this->mode=mode;
+		this->halfPatchWidth=halfPatchWidth;
+    }
 
     Mat inputImage;
     Mat mask,updatedMask;
@@ -42,30 +51,62 @@ public:
     int halfPatchWidth;
     int targetIndex;
 
-    int checkValidInputs(){
-    	//qwe
-    };
 
-    void calculateGradients(){
+    int checkValidInputs()
+    {
+    	if(this->inputImage.type()!=CV_8UC3)
+    	    return 0;//ERROR_INPUT_MAT_INVALID_TYPE
+    	if(this->mask.type()!=CV_8UC1)
+    	    return 1;//ERROR_INPUT_MASK_INVALID_TYPE;
+    	if(!CV_ARE_SIZES_EQ(&mask,&inputImage))
+    	    return 2;//ERROR_MASK_INPUT_SIZE_MISMATCH;
+    	if(halfPatchWidth==0)
+    	    return 3;//ERROR_HALF_PATCH_WIDTH_ZERO;
+    	return 4;//CHECK_VALID;
+    }
+    void calculateGradients()
+    {
+    	Mat srcGray;
+	    cvtColor(workImage,srcGray,CV_BGR2GRAY);
 
-    };
+	    Scharr(srcGray,gradientX,CV_16S,1,0);
+	    convertScaleAbs(gradientX,gradientX);
+	    gradientX.convertTo(gradientX,CV_32F);
 
-    void initializeMats(){
-    	//qwe
-    };
 
-    void computeFillFront(){
-    	//qwe
-    };
+	    Scharr(srcGray,gradientY,CV_16S,0,1);
+	    convertScaleAbs(gradientY,gradientY);
+	    gradientY.convertTo(gradientY,CV_32F);
 
-    void computeConfidence(){
-    	//qwe
-    };
 
-    void computeData(){
-    	//qwe
-    };
-    
+
+
+
+
+	    for(int x=0;x<sourceRegion.cols;x++){
+	        for(int y=0;y<sourceRegion.rows;y++){
+
+	            if(sourceRegion.at<uchar>(y,x)==0){
+	                gradientX.at<float>(y,x)=0;
+	                gradientY.at<float>(y,x)=0;
+	            }/*else
+	            {
+	                if(gradientX.at<float>(y,x)<255)
+	                    gradientX.at<float>(y,x)=0;
+	                if(gradientY.at<float>(y,x)<255)
+	                    gradientY.at<float>(y,x)=0;
+	            }*/
+
+	        }
+	    }
+	    gradientX/=255;
+	    gradientY/=255;
+    }
+    void initializeMats();
+    void computeFillFront();
+    void computeConfidence();
+    void computeData();
+
     void computeTarget();
     void computeBestPatch();
     void updateMats();
