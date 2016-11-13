@@ -172,10 +172,15 @@ public:
     }
 
     void computeData(){
-    	//qwe
+    	
+    	for(int i=0;i<fillFront.size();i++){
+	        cv::Point2i currentPoint=fillFront.at(i);
+	        cv::Point2i currentNormal=normals.at(i);
+	        data.at<float>(currentPoint.y,currentPoint.x)=std::fabs(gradientX.at<float>(currentPoint.y,currentPoint.x)*currentNormal.x+gradientY.at<float>(currentPoint.y,currentPoint.x)*currentNormal.y)+.001;
+	    }
     }
 
-	void computeBestPatch(){
+    void computeBestPatch(){
 	    double minError=9999999999999999,bestPatchVarience=9999999999999999;
 	    cv::Point2i a,b;
 	    cv::Point2i currentPoint=fillFront.at(targetIndex);
@@ -397,7 +402,7 @@ int main(int argc, char *argv[]){
 
     image = originalImage.clone();
 
-    inpaintMask = Mat::zeroes(image.size(), CV_8U);
+    inpaintMask = Mat::zeros(image.size(), CV_8U);
 
     namedWindow("Input Image", WINDOW_AUTOSIZE);
     imshow("Input Image", image);
