@@ -51,6 +51,7 @@ public:
     int halfPatchWidth;
     int targetIndex;
 
+
     int checkValidInputs()
     {
     	if(this->inputImage.type()!=CV_8UC3)
@@ -105,12 +106,41 @@ public:
     void computeFillFront();
     void computeConfidence();
     void computeData();
+
     void computeTarget();
     void computeBestPatch();
     void updateMats();
     bool checkEnd();
     void getPatch(Point2i &centerPixel, Point2i &upperLeft, Point2i &lowerRight);
-    void inpaint();
+    
+    void inpaint(){
+    	namedWindow("updatedMask");
+    	namedWindow("inpaint");
+    	namedWindow("gradientX");
+    	namedWindow("gradientY");
+    	initializeMats();
+    	calculateGradients();
+    	bool notFilled=true;
+    	while(notFilled){
+    		computeFillFront();
+    		computeConfidence();
+    		computeData();
+    		computeTarget();
+    		computeBestPatch();
+    		updateMats();
+    		notFilled=checkEnd();
+
+    		imshow("updatedMask",updatedMask);
+    		imshow("inpaint",workImage);
+    		imshow("gradientX",gradientX);
+    		imshow("gradientY",gradientY);
+    		waitKey(2);
+    	}
+    	result=workImage.clone();
+
+    	namedWindow("confidence");
+    	imshow("confidence",confidence);
+    }
 };
 
 static void onMouse(int event, int x, int y, int flags, void*){
