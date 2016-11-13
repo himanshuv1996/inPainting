@@ -64,6 +64,7 @@ public:
     	    return 3;//ERROR_HALF_PATCH_WIDTH_ZERO;
     	return 4;//CHECK_VALID;
     }
+
     //edge detection using sobel derivative
     void calculateGradients()
     {
@@ -291,9 +292,10 @@ int main(int argc, char *argv[]){
 
     int halfPatchWidth = 4;
 
-    if(argc < 3){
-        cout<<"Parameter missing"<<endl;
-        return 0;
+    if(argc >= 4){
+        std::stringstream ss;
+        ss<<argv[3];
+        ss>>halfPatchWidth;
     }
 
     originalImage = imread(argv[1],CV_LOAD_IMAGE_COLOR);
